@@ -1,22 +1,22 @@
 {
   "name": "aurelia-flux",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "A Flux dispatcher plugin for Aurelia.",
   "keywords": [
     "aurelia",
     "flux",
     "plugin"
   ],
-  "homepage": "https://github.com/tfrydrychewicz/aurelia-flux",
+  "homepage": "https://github.com/charlespockert/aurelia-flux",
   "bugs": {
-    "url": "https://github.com/tfrydrychewicz/aurelia-flux/issues"
+    "url": "https://github.com/charlespockert/aurelia-flux/issues"
   },
   "license": "MIT",
   "author": "Tomasz Frydrychewicz <tomasz.frydrychewicz@gmail.com>",
   "main": "dist/commonjs/index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tfrydrychewicz/aurelia-flux"
+    "url": "https://github.com/charlespockert/aurelia-flux"
   },
   "scripts": {
     "test": "./node_modules/.bin/karma start --single-run --browsers Firefox"
