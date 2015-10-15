@@ -87,7 +87,7 @@ export class LifecycleManager {
 
         // Intercept construction data creation
         Container.instance.__proto__._createConstructionInfo = function () {
-          var ci = constrInfoImpl.apply(Container.instance, arguments);
+          var ci = constrInfoImpl.apply(this, arguments);
           var invokeImpl = ci.activator.invoke;
 
           // Intercept activation function
