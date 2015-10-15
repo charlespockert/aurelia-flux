@@ -4,10 +4,12 @@ import {FluxDispatcher} from './flux-dispatcher'
 export class RouterManager {
   static AddFluxPipelineStep(aurelia) {
     let router = aurelia.container.get(Router);
-    let configuration = new RouterConfiguration();
 
-    configuration.addPipelineStep("modelbind", FluxLifeCycleStep);
-    router.configure(configuration);
+    router.ensureConfigured().then(() => {
+      let configuration = new RouterConfiguration();
+      configuration.addPipelineStep("modelbind", FluxLifeCycleStep);
+      router.configure(configuration);
+    });
   }
 }
 

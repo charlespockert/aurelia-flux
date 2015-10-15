@@ -1,5 +1,5 @@
 declare module 'aurelia-flux' {
-  import { ClassActivator }  from 'aurelia-dependency-injection';
+  import { Container }  from 'aurelia-dependency-injection';
   import { HtmlBehaviorResource }  from 'aurelia-templating';
   import { Dispatcher, DispatcherProxy }  from 'aurelia-flux/instance-dispatcher';
   import { FluxDispatcher }  from 'aurelia-flux/flux-dispatcher';

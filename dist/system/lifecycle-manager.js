@@ -1,13 +1,13 @@
 System.register(['aurelia-dependency-injection', 'aurelia-templating', './instance-dispatcher', './flux-dispatcher', './metadata', './symbols', 'bluebird', 'aurelia-router'], function (_export) {
     'use strict';
 
-    var ClassActivator, HtmlBehaviorResource, Dispatcher, DispatcherProxy, FluxDispatcher, Metadata, Symbols, Promise, activationStrategy, LifecycleManager;
+    var Container, HtmlBehaviorResource, Dispatcher, DispatcherProxy, FluxDispatcher, Metadata, Symbols, Promise, activationStrategy, LifecycleManager;
 
     function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
     return {
         setters: [function (_aureliaDependencyInjection) {
-            ClassActivator = _aureliaDependencyInjection.ClassActivator;
+            Container = _aureliaDependencyInjection.Container;
         }, function (_aureliaTemplating) {
             HtmlBehaviorResource = _aureliaTemplating.HtmlBehaviorResource;
         }, function (_instanceDispatcher) {
@@ -87,13 +87,13 @@ System.register(['aurelia-dependency-injection', 'aurelia-templating', './instan
                 };
 
                 LifecycleManager.interceptHtmlBehaviorResource = function interceptHtmlBehaviorResource() {
-                    if (HtmlBehaviorResource === undefined || typeof HtmlBehaviorResource.prototype.analyze !== 'function') {
+                    if (HtmlBehaviorResource === undefined || typeof HtmlBehaviorResource.prototype.initialize !== 'function') {
                         throw new Error('Unsupported version of HtmlBehaviorResource');
                     }
 
-                    var analyzeImpl = HtmlBehaviorResource.prototype.analyze;
+                    var initializeImpl = HtmlBehaviorResource.prototype.initialize;
 
-                    HtmlBehaviorResource.prototype.analyze = function () {
+                    HtmlBehaviorResource.prototype.initialize = function () {
                         for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
                             args[_key3] = arguments[_key3];
                         }
@@ -104,54 +104,64 @@ System.register(['aurelia-dependency-injection', 'aurelia-templating', './instan
                                 target.prototype.detached = function () {};
                             }
                         }
-                        return analyzeImpl.apply(this, args);
+                        return initializeImpl.apply(this, args);
                     };
                 };
 
                 LifecycleManager.interceptClassActivator = function interceptClassActivator() {
-                    if (ClassActivator.instance === undefined || ClassActivator.instance.invoke === undefined) {
-                        throw new Error('Unsupported version of ClassActivator');
+
+                    if (Container.instance === undefined || Container.instance._createConstructionInfo === undefined) {
+                        throw new Error('Unsupported version of Container');
                     }
 
-                    var invokeImpl = ClassActivator.instance.invoke;
-                    ClassActivator.instance.invoke = function () {
-                        for (var _len4 = arguments.length, invokeArgs = Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
-                            invokeArgs[_key4] = arguments[_key4];
-                        }
+                    var constrInfoImpl = Container.instance._createConstructionInfo;
 
-                        var args = invokeArgs[1],
-                            instance;
+                    Container.instance._createConstructionInfo = function () {
+                        var ci = constrInfoImpl.apply(Container.instance, arguments);
+                        var invokeImpl = ci.activator.invoke;
 
-                        if (Array.isArray(args) === false) {
-                            throw new Error('Unsupported version of ClassActivator');
-                        }
-
-                        var dispatcher = args.find(function (item) {
-                            return item instanceof Dispatcher;
-                        });
-
-                        if (dispatcher) {
-                            var instancePromise = Promise.defer();
-                            args[args.indexOf(dispatcher)] = new DispatcherProxy(instancePromise.promise);
-                            instance = invokeImpl.apply(this, invokeArgs);
-                            instance[Symbols.instanceDispatcher] = new Dispatcher(instance);
-                            instancePromise.resolve(instance);
-                        } else {
-                            instance = invokeImpl.apply(this, invokeArgs);
-                        }
-
-                        if (Metadata.exists(Object.getPrototypeOf(instance))) {
-                            if (instance[Symbols.instanceDispatcher] === undefined) {
-                                instance[Symbols.instanceDispatcher] = new Dispatcher(instance);
+                        ci.activator.invoke = function () {
+                            for (var _len4 = arguments.length, invokeArgs = Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
+                                invokeArgs[_key4] = arguments[_key4];
                             }
-                            instance[Symbols.instanceDispatcher].registerMetadata();
-                        }
 
-                        if (instance[Symbols.instanceDispatcher] !== undefined) {
-                            LifecycleManager.interceptInstanceDeactivators(instance);
-                        }
+                            var args = invokeArgs[2],
+                                instance;
 
-                        return instance;
+                            if (Array.isArray(args) === false) {
+                                throw new Error('Unsupported version of Container');
+                            }
+
+                            var dispatcher = args.find(function (item) {
+                                return item instanceof Dispatcher;
+                            });
+
+                            if (dispatcher) {
+                                var instancePromise = Promise.defer();
+                                args[args.indexOf(dispatcher)] = new DispatcherProxy(instancePromise.promise);
+                                invokeArgs[2] = args;
+                                instance = invokeImpl.apply(ci.activator, invokeArgs);
+                                instance[Symbols.instanceDispatcher] = new Dispatcher(instance);
+                                instancePromise.resolve(instance);
+                            } else {
+                                instance = invokeImpl.apply(ci.activator, invokeArgs);
+                            }
+
+                            if (Metadata.exists(Object.getPrototypeOf(instance))) {
+                                if (instance[Symbols.instanceDispatcher] === undefined) {
+                                    instance[Symbols.instanceDispatcher] = new Dispatcher(instance);
+                                }
+                                instance[Symbols.instanceDispatcher].registerMetadata();
+                            }
+
+                            if (instance[Symbols.instanceDispatcher] !== undefined) {
+                                LifecycleManager.interceptInstanceDeactivators(instance);
+                            }
+
+                            return instance;
+                        };
+
+                        return ci;
                     };
                 };
 

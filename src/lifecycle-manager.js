@@ -1,4 +1,4 @@
-import {ClassActivator} from 'aurelia-dependency-injection';
+import {Container} from 'aurelia-dependency-injection';
 import {HtmlBehaviorResource} from 'aurelia-templating';
 import {Dispatcher, DispatcherProxy} from './instance-dispatcher';
 import {FluxDispatcher} from './flux-dispatcher';
@@ -56,13 +56,13 @@ export class LifecycleManager {
     }
 
     static interceptHtmlBehaviorResource() {
-      if(HtmlBehaviorResource === undefined || typeof HtmlBehaviorResource.prototype.analyze !== 'function') {
+      if(HtmlBehaviorResource === undefined || typeof HtmlBehaviorResource.prototype.initialize !== 'function') {
         throw new Error('Unsupported version of HtmlBehaviorResource');
       }
 
-      var analyzeImpl = HtmlBehaviorResource.prototype.analyze;
+      var initializeImpl = HtmlBehaviorResource.prototype.initialize;
 
-      HtmlBehaviorResource.prototype.analyze = function(...args) {
+      HtmlBehaviorResource.prototype.initialize = function(...args) {
         let target = args[1];        
         if(    target
             && target.prototype
@@ -73,22 +73,32 @@ export class LifecycleManager {
             target.prototype.detached = function() {};
           }
         }
-        return analyzeImpl.apply(this, args);
+        return initializeImpl.apply(this, args);
       };
     }
 
     static interceptClassActivator() {
-        if(ClassActivator.instance === undefined || ClassActivator.instance.invoke === undefined) {
-            throw new Error('Unsupported version of ClassActivator');
+
+        if(Container.instance === undefined || Container.instance._createConstructionInfo === undefined) {
+            throw new Error('Unsupported version of Container');
         }
 
-        var invokeImpl = ClassActivator.instance.invoke;
-        ClassActivator.instance.invoke = function(...invokeArgs) {
-            var args = invokeArgs[1],
-                instance;                
+        var constrInfoImpl = Container.instance._createConstructionInfo;
+
+        // Intercept construction data creation
+        Container.instance._createConstructionInfo = function () {
+          var ci = constrInfoImpl.apply(Container.instance, arguments);
+          var invokeImpl = ci.activator.invoke;
+
+          // Intercept activation function
+          ci.activator.invoke = function(...invokeArgs) {
+
+            // Keys is 2nd arg
+            var args = invokeArgs[2],
+              instance;                
 
             if(Array.isArray(args) === false) {
-                throw new Error('Unsupported version of ClassActivator');
+                throw new Error('Unsupported version of Container');
             }
             
             var dispatcher = args.find((item) => { return item instanceof Dispatcher; });
@@ -96,11 +106,12 @@ export class LifecycleManager {
             if(dispatcher) {
                 var instancePromise = Promise.defer();
                 args[args.indexOf(dispatcher)] = new DispatcherProxy(instancePromise.promise);
-                instance = invokeImpl.apply(this, invokeArgs);                
+                invokeArgs[2] = args;
+                instance = invokeImpl.apply(ci.activator, invokeArgs);                
                 instance[Symbols.instanceDispatcher] = new Dispatcher(instance);
                 instancePromise.resolve(instance);
             } else {
-                instance = invokeImpl.apply(this, invokeArgs);
+                instance = invokeImpl.apply(ci.activator, invokeArgs);
             }
             
             if(Metadata.exists(Object.getPrototypeOf(instance))) {
@@ -115,6 +126,9 @@ export class LifecycleManager {
             }
 
             return instance;
+          };
+
+          return ci;
         };
     }
 }

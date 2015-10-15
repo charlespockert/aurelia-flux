@@ -12,10 +12,12 @@ define(['exports', 'aurelia-router', './flux-dispatcher'], function (exports, _a
 
     RouterManager.AddFluxPipelineStep = function AddFluxPipelineStep(aurelia) {
       var router = aurelia.container.get(_aureliaRouter.Router);
-      var configuration = new _aureliaRouter.RouterConfiguration();
 
-      configuration.addPipelineStep("modelbind", FluxLifeCycleStep);
-      router.configure(configuration);
+      router.ensureConfigured().then(function () {
+        var configuration = new _aureliaRouter.RouterConfiguration();
+        configuration.addPipelineStep("modelbind", FluxLifeCycleStep);
+        router.configure(configuration);
+      });
     };
 
     return RouterManager;
