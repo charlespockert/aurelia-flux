@@ -98,9 +98,9 @@ define(['exports', 'aurelia-dependency-injection', 'aurelia-templating', './inst
                 throw new Error('Unsupported version of Container');
             }
 
-            var constrInfoImpl = _aureliaDependencyInjection.Container.instance._createConstructionInfo;
+            var constrInfoImpl = _aureliaDependencyInjection.Container.instance.__proto__._createConstructionInfo;
 
-            _aureliaDependencyInjection.Container.instance._createConstructionInfo = function () {
+            _aureliaDependencyInjection.Container.instance.__proto__._createConstructionInfo = function () {
                 var ci = constrInfoImpl.apply(_aureliaDependencyInjection.Container.instance, arguments);
                 var invokeImpl = ci.activator.invoke;
 

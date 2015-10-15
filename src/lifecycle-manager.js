@@ -83,10 +83,10 @@ export class LifecycleManager {
             throw new Error('Unsupported version of Container');
         }
 
-        var constrInfoImpl = Container.instance._createConstructionInfo;
+        var constrInfoImpl = Container.instance.__proto__._createConstructionInfo;
 
         // Intercept construction data creation
-        Container.instance._createConstructionInfo = function () {
+        Container.instance.__proto__._createConstructionInfo = function () {
           var ci = constrInfoImpl.apply(Container.instance, arguments);
           var invokeImpl = ci.activator.invoke;
 

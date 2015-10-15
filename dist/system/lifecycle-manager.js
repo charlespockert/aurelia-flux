@@ -114,9 +114,9 @@ System.register(['aurelia-dependency-injection', 'aurelia-templating', './instan
                         throw new Error('Unsupported version of Container');
                     }
 
-                    var constrInfoImpl = Container.instance._createConstructionInfo;
+                    var constrInfoImpl = Container.instance.__proto__._createConstructionInfo;
 
-                    Container.instance._createConstructionInfo = function () {
+                    Container.instance.__proto__._createConstructionInfo = function () {
                         var ci = constrInfoImpl.apply(Container.instance, arguments);
                         var invokeImpl = ci.activator.invoke;
 
